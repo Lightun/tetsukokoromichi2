@@ -2,36 +2,121 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>CSV 可視化</title>
+  <title>スコア推移可視化</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-  <h1>CSV 可視化デモ</h1>
-  <canvas id="myChart" width="400" height="200"></canvas>
+  <h2>ユーザーと曲を選択</h2>
+  <label for="userSelect">ユーザー:</label>
+  <select id="userSelect"></select>
+
+  <label for="songSelect">曲:</label>
+  <select id="songSelect"></select>
+
+  <button id="showBtn">表示</button>
+
+  <h2>スコア推移</h2>
+  <canvas id="scoreChart" width="600" height="400"></canvas>
 
   <script>
-    Papa.parse("data.csv", {
-      download: true,
-      header: true,
-      complete: function(results) {
-        const labels = results.data.map(row => row.name);
-        const scores = results.data.map(row => row.score);
+    const files = ['1003.csv','1004.csv']; // 読み込むCSV
+    const userScores = {}; // {player: {song: [score1, score2,...]}}
+    let users = [];
+    let songs = [];
 
-        const ctx = document.getElementById('myChart').getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'スコア',
-              data: scores,
-              backgroundColor: 'rgba(75, 192, 192, 0.5)'
-            }]
-          }
-        });
+    async function loadCSV(file) {
+      const res = await fetch(file);
+      const text = await res.text();
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split(',');
+
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',');
+        const player = row[0];
+
+        if (!userScores[player]) userScores[player] = {};
+        if (!users.includes(player)) users.push(player);
+
+        for (let j = 1; j < headers.length; j++) {
+          const song = headers[j];
+          if (!songs.includes(song)) songs.push(song);
+
+          const score = parseFloat(row[j]);
+          if (!userScores[player][song]) userScores[player][song] = [];
+          userScores[player][song].push(score);
+        }
       }
+    }
+
+    async function main() {
+      for (const file of files) {
+        await loadCSV(file);
+      }
+
+      // ユーザーセレクトに追加
+      const userSelect = document.getElementById('userSelect');
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u;
+        opt.textContent = u;
+        userSelect.appendChild(opt);
+      });
+
+      // 曲セレクトに追加
+      const songSelect = document.getElementById('songSelect');
+      songs.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        songSelect.appendChild(opt);
+      });
+    }
+
+    let chartInstance = null;
+
+    document.getElementById('showBtn').addEventListener('click', () => {
+      const user = document.getElementById('userSelect').value;
+      const song = document.getElementById('songSelect').value;
+
+      const scores = userScores[user][song];
+      console.log(`選択ユーザー: ${user}`);
+      console.log(`選択曲: ${song}`);
+      console.log(`スコア推移:`, scores);
+
+      const ctx = document.getElementById('scoreChart').getContext('2d');
+
+      if (chartInstance) chartInstance.destroy(); // 前のグラフを消す
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: files, // X軸はファイル名
+          datasets: [{
+            label: `${user} - ${song}`,
+            data: scores,
+            fill: false,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: false,
+          scales: {
+            y: {
+              max: 1000000 
+            }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: 'スコア推移'
+            }
+          }
+        }
+      });
     });
+
+    main();
   </script>
 </body>
 </html>
