@@ -16,8 +16,19 @@
   <button id="showBtn">表示</button>
 
   <h2>スコア推移</h2>
-  <canvas id="scoreChart" width="800" height="600"></canvas>
+  <!-- <canvas id="scoreChart" width="800" height="600"></canvas> -->
+  <div style="width: 90%; max-width: 600px; text-align: left;">
+    <canvas id="scoreChart"></canvas>
+  </div>
 
+  <style>
+    #scoreChart {
+      display: block;
+      width: 100%;      /* 横幅は親要素に合わせる */
+      height: 400px;    /* 高さを大きくする */
+      margin: 0;
+    }
+  </style>
 
   <script>
     const files = ['1003.csv','1004.csv']; // 読み込むCSV
@@ -101,7 +112,8 @@
           }]
         },
         options: {
-          responsive: false,
+          responsive: true,
+          maintainAspectRatio: false,
           scales: {
             y: {
               max: 1000000 
