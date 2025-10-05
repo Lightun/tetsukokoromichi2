@@ -6,7 +6,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <h2>ユーザーと曲を選択</h2>
+  <h2>スコア推移</h2>
   <label for="userSelect">ユーザー:</label>
   <select id="userSelect"></select>
 
@@ -20,6 +20,9 @@
   <div style="width: 90%; max-width: 600px; text-align: left;">
     <canvas id="scoreChart"></canvas>
   </div>
+
+  <h2>選択された曲の統計情報(10/04時点)</h2>
+  <div id="statsText" style="font-size:1.1em; margin-top:10px;"></div>
 
   <style>
     .container {
@@ -99,6 +102,23 @@
 
     let chartInstance = null;
 
+    function calcStats(arr) {
+      // 数字だけで0以外の値を抽出
+      const filtered = arr.filter(v => typeof v === 'number' && v !== 0 && !isNaN(v));
+      const sorted = [...filtered].sort((a,b)=>a-b);
+      const sum = filtered.reduce((a,b)=>a+b,0);
+      const avg = filtered.length > 0 ? Math.round(sum / filtered.length) : 0;
+      const min = sorted.length > 0 ? sorted[0] : 0;
+      const max = sorted.length > 0 ? sorted[sorted.length-1] : 0;
+      const median = sorted.length > 0 ?
+        (sorted.length % 2 === 0 ? Math.round((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2) : sorted[Math.floor(sorted.length/2)]) : 0;
+
+      return {avg, min, max, median};
+    }
+
+
+
+
     document.getElementById('showBtn').addEventListener('click', () => {
       const user = document.getElementById('userSelect').value;
       const song = document.getElementById('songSelect').value;
@@ -110,7 +130,18 @@
 
       const ctx = document.getElementById('scoreChart').getContext('2d');
 
+      //最新の日付に更新
+      const scores1004 = users.map(u => userScores[u][song][files.indexOf('1004.csv')]).filter(v=>v!==undefined);
+      if(scores1004.length > 0){
+        const stats = calcStats(scores1004);
+        document.getElementById('statsText').innerHTML =
+          `平均: ${stats.avg}<br>最大: ${stats.max}<br>最小: ${stats.min}<br>中央値: ${stats.median}`;
+      } else {
+        document.getElementById('statsText').textContent = '1004.csv のデータがありません';
+      }
+
       if (chartInstance) chartInstance.destroy(); // 前のグラフを消す
+
 
       chartInstance = new Chart(ctx, {
         type: 'line',
@@ -141,6 +172,8 @@
         }
       });
     });
+
+
 
     main();
   </script>
