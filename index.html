@@ -20,7 +20,7 @@
     <canvas id="scoreChart"></canvas>
   </div>
 
-  <h2>曲の統計情報(10/07時点)</h2>
+  <h2>曲の統計情報(10/08時点)</h2>
   <div id="statsText" style="font-size:1.1em; margin-top:10px;"></div>
 
   <style>
@@ -46,7 +46,7 @@
   </style>
 
   <script>
-    const files = ['1003.csv','1004.csv','1005.csv','1006.csv','1007.csv']; // 読み込むCSV
+    const files = ['1003.csv','1004.csv','1005.csv','1006.csv','1007.csv','1008.csv']; // 読み込むCSV
     const userScores = {}; // {player: {song: [score1, score2,...]}}
     let users = [];
     let songs = [];
@@ -130,9 +130,9 @@
       const ctx = document.getElementById('scoreChart').getContext('2d');
 
       //最新の日付に更新
-      const scores1007 = users.map(u => userScores[u][song][files.indexOf('1007.csv')]).filter(v=>v!==undefined);
-      if(scores1007.length > 0){
-        const stats = calcStats(scores1007);
+      const scores1008 = users.map(u => userScores[u][song][files.indexOf('1008.csv')]).filter(v=>v!==undefined);
+      if(scores1008.length > 0){
+        const stats = calcStats(scores1008);
         document.getElementById('statsText').innerHTML =
           `平均: ${stats.avg}<br>最大: ${stats.max}<br>最小: ${stats.min}<br>中央値: ${stats.median}`;
       } else {
