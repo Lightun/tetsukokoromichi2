@@ -20,8 +20,8 @@
     <canvas id="scoreChart"></canvas>
   </div>
 
-  <h2>曲の統計情報</h2>
-  <div id="statsText" style="font-size:1.1em; margin-top:10px;"></div>
+  <!-- <h2>曲の統計情報</h2>
+  <div id="statsText" style="font-size:1.1em; margin-top:10px;"></div> -->
 
   <style>
     .container {
@@ -45,136 +45,197 @@
     }
   </style>
 
-  <script>
-    const files = ['1003.csv','1004.csv','1005.csv','1006.csv','1007.csv','1008.csv','1009.csv','1010.csv','1011.csv']; // 読み込むCSV
-    const userScores = {}; // {player: {song: [score1, score2,...]}}
-    let users = [];
-    let songs = [];
+<script>
+  const files = ['1003.csv','1004.csv','1005.csv','1006.csv','1007.csv','1008.csv','1009.csv','1010.csv','1011.csv'];
+  const userScores = {};
+  let users = [];
+  let songs = [];
 
-    async function loadCSV(file) {
-      const res = await fetch(file);
-      const text = await res.text();
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split(',');
+  async function loadCSV(file) {
+    const res = await fetch(file);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',');
 
-      for (let i = 1; i < lines.length; i++) {
-        const row = lines[i].split(',');
-        const player = row[0];
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',');
+      const player = row[0];
 
-        if (!userScores[player]) userScores[player] = {};
-        if (!users.includes(player)) users.push(player);
+      if (!userScores[player]) userScores[player] = {};
+      if (!users.includes(player)) users.push(player);
 
-        for (let j = 1; j < headers.length; j++) {
-          const song = headers[j];
-          if (!songs.includes(song)) songs.push(song);
+      for (let j = 1; j < headers.length; j++) {
+        const song = headers[j];
+        if (!songs.includes(song)) songs.push(song);
 
-          const score = parseFloat(row[j]);
-          if (!userScores[player][song]) userScores[player][song] = [];
-          userScores[player][song].push(score);
-        }
+        const score = parseFloat(row[j]);
+        if (!userScores[player][song]) userScores[player][song] = [];
+        userScores[player][song].push(score);
       }
     }
+  }
 
-    async function main() {
-      for (const file of files) {
-        await loadCSV(file);
-      }
-
-      // ユーザーセレクトに追加
-      const userSelect = document.getElementById('userSelect');
-      users.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u;
-        opt.textContent = u;
-        userSelect.appendChild(opt);
-      });
-
-      // 曲セレクトに追加
-      const songSelect = document.getElementById('songSelect');
-      songs.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = s;
-        songSelect.appendChild(opt);
-      });
+  async function main() {
+    for (const file of files) {
+      await loadCSV(file);
     }
 
-    let chartInstance = null;
-
-    function calcStats(arr) {
-      // 数字だけで0以外の値を抽出
-      const filtered = arr.filter(v => typeof v === 'number' && v !== 0 && !isNaN(v));
-      const sorted = [...filtered].sort((a,b)=>a-b);
-      const sum = filtered.reduce((a,b)=>a+b,0);
-      const avg = filtered.length > 0 ? Math.round(sum / filtered.length) : 0;
-      const min = sorted.length > 0 ? sorted[0] : 0;
-      const max = sorted.length > 0 ? sorted[sorted.length-1] : 0;
-      const median = sorted.length > 0 ?
-        (sorted.length % 2 === 0 ? Math.round((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2) : sorted[Math.floor(sorted.length/2)]) : 0;
-
-      return {avg, min, max, median};
-    }
-
-
-
-
-    document.getElementById('showBtn').addEventListener('click', () => {
-      const user = document.getElementById('userSelect').value;
-      const song = document.getElementById('songSelect').value;
-
-      const scores = userScores[user][song];
-      console.log(`選択ユーザー: ${user}`);
-      console.log(`選択曲: ${song}`);
-      console.log(`スコア推移:`, scores);
-
-      const ctx = document.getElementById('scoreChart').getContext('2d');
-
-      //最新の日付に更新
-      //const current_scores = users.map(u => userScores[u][song][files.indexOf('1009.csv')]).filter(v=>v!==undefined);
-      const current_scores = users.map(u => userScores[u][song][files.indexOf(files.at(-1))]).filter(v=>v!==undefined);
-      if(current_scores.length > 0){
-        const stats = calcStats(current_scores);
-        document.getElementById('statsText').innerHTML =
-          `平均: ${stats.avg}<br>最大: ${stats.max}<br>最小: ${stats.min}<br>中央値: ${stats.median}`;
-      } else {
-        document.getElementById('statsText').textContent = '最新のデータがありません';
-      }
-
-      if (chartInstance) chartInstance.destroy(); // 前のグラフを消す
-
-
-      chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: files, // X軸はファイル名
-          datasets: [{
-            label: `${user} - ${song}`,
-            data: scores,
-            fill: false,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            tension: 0.1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              max: 1000000 
-            }
-          },
-          plugins: {
-            title: {
-              display: true
-            }
-          }
-        }
-      });
+    const userSelect = document.getElementById('userSelect');
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u;
+      opt.textContent = u;
+      userSelect.appendChild(opt);
     });
 
+    const songSelect = document.getElementById('songSelect');
+    songs.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      songSelect.appendChild(opt);
+    });
+  }
 
+  let chartInstance = null;
 
-    main();
-  </script>
+  function calcStats(arr) {
+    const filtered = arr.filter(v => typeof v === 'number' && v !== 0 && !isNaN(v));
+    const sorted = [...filtered].sort((a,b)=>a-b);
+    const sum = filtered.reduce((a,b)=>a+b,0);
+    const avg = filtered.length > 0 ? Math.round(sum / filtered.length) : 0;
+    const min = sorted.length > 0 ? sorted[0] : 0;
+    const max = sorted.length > 0 ? sorted[sorted.length-1] : 0;
+    const median = sorted.length > 0
+      ? (sorted.length % 2 === 0
+          ? Math.round((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)
+          : sorted[Math.floor(sorted.length/2)])
+      : 0;
+    return {avg, min, max, median};
+  }
+
+  document.getElementById('showBtn').addEventListener('click', () => {
+    const user = document.getElementById('userSelect').value;
+    const song = document.getElementById('songSelect').value;
+    const scores = userScores[user][song];
+
+    const ctx = document.getElementById('scoreChart').getContext('2d');
+
+    // 各ファイルごとに統計を算出
+    const avgPerFile = [];
+    const maxPerFile = [];
+    const minPerFile = [];
+    const medianPerFile = [];
+
+    files.forEach((file, idx) => {
+      const allScores = users.map(u => userScores[u][song]?.[idx]).filter(v => v);
+      const stats = calcStats(allScores);
+      avgPerFile.push(stats.avg);
+      maxPerFile.push(stats.max);
+      minPerFile.push(stats.min);
+      medianPerFile.push(stats.median);
+    });
+
+    // 最新データの統計を表示
+    // const current_scores = users.map(u => userScores[u][song][files.length - 1]).filter(v => v);
+    // if (current_scores.length > 0) {
+    //   const stats = calcStats(current_scores);
+    //   document.getElementById('statsText').innerHTML =
+    //     `平均: ${stats.avg}<br>最大: ${stats.max}<br>最小: ${stats.min}<br>中央値: ${stats.median}`;
+    // } else {
+    //   document.getElementById('statsText').textContent = '最新のデータがありません';
+    // }
+
+    if (chartInstance) chartInstance.destroy();
+
+    // 🎨 複数の線を重ねて表示
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: files,
+        datasets: [
+          {
+            label: `${user} のスコア`,
+            data: scores,
+            fill: false,
+            borderColor: 'rgba(75, 192, 192, 1)', // 緑
+            tension: 0.1,
+            borderWidth: 2
+          },
+          {
+            label: '平均スコア',
+            data: avgPerFile,
+            fill: false,
+            borderColor: 'rgba(255, 159, 64, 1)', // オレンジ
+            borderDash: [6, 4],
+            tension: 0.1,
+            borderWidth: 2
+          },
+          {
+            label: '最大スコア',
+            data: maxPerFile,
+            fill: false,
+            borderColor: 'rgba(54, 162, 235, 1)', // 青
+            borderDash: [3, 3],
+            tension: 0.1,
+            borderWidth: 1.5
+          },
+          {
+            label: '最小スコア',
+            data: minPerFile,
+            fill: false,
+            borderColor: 'rgba(255, 99, 132, 1)', // 赤
+            borderDash: [3, 3],
+            tension: 0.1,
+            borderWidth: 1.5
+          },
+          {
+            label: '中央値',
+            data: medianPerFile,
+            fill: false,
+            borderColor: 'rgba(153, 102, 255, 1)', // 紫
+            borderDash: [8, 4],
+            tension: 0.1,
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            max: 1000000,
+            title: { display: true, text: 'スコア' }
+          },
+          x: {
+            title: { display: true, text: 'データ日付 (CSV)' }
+          }
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: `${song} のスコア推移（統計付き）`
+          },
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 20 }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  });
+
+  main();
+</script>
 </body>
 </html>
