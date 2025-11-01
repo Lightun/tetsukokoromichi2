@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スコア比較</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    select, button {
+      font-size: 1.1em;
+      padding: 4px 8px;
+      margin: 4px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 40%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #eee;
+    }
+    .winner {
+      background-color: #c7f7c7;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>2人の最新スコア比較</h2>
+
+  <label for="userSelect1">プレイヤー1:</label>
+  <select id="userSelect1"></select>
+
+  <label for="userSelect2">プレイヤー2:</label>
+  <select id="userSelect2"></select>
+
+  <button id="showBtn">比較表示</button>
+
+  <div id="result"></div>
+
+<script>
+  const files = ['1003.csv','1004.csv','1005.csv','1006.csv','1007.csv','1008.csv','1009.csv',
+    '1010.csv','1011.csv','1012.csv','1013.csv','1014.csv','1015.csv','1016.csv',
+    '1017.csv','1018.csv','1019.csv','1020.csv','1021.csv','1022.csv','1023.csv',
+    '1025.csv','1026.csv','1027.csv','1028.csv','1029.csv','1030.csv','1031.csv'];
+
+  const userScores = {};
+  let users = [];
+  let songs = [];
+
+  async function loadCSV(file) {
+    const res = await fetch(file);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',');
+
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',');
+      const player = row[0];
+      if (!userScores[player]) userScores[player] = {};
+      if (!users.includes(player)) users.push(player);
+
+      for (let j = 1; j < headers.length; j++) {
+        const song = headers[j];
+        if (!songs.includes(song)) songs.push(song);
+
+        const score = parseFloat(row[j]);
+        if (!userScores[player][song]) userScores[player][song] = [];
+        userScores[player][song].push(score);
+      }
+    }
+  }
+
+  async function main() {
+    for (const file of files) {
+      await loadCSV(file);
+    }
+
+    const userSelect1 = document.getElementById('userSelect1');
+    const userSelect2 = document.getElementById('userSelect2');
+    users.forEach(u => {
+      const opt1 = document.createElement('option');
+      const opt2 = document.createElement('option');
+      opt1.value = opt2.value = u;
+      opt1.textContent = opt2.textContent = u;
+      userSelect1.appendChild(opt1);
+      userSelect2.appendChild(opt2);
+    });
+  }
+
+  document.getElementById('showBtn').addEventListener('click', () => {
+    const user1 = document.getElementById('userSelect1').value;
+    const user2 = document.getElementById('userSelect2').value;
+    const resultDiv = document.getElementById('result');
+    resultDiv.innerHTML = '';
+
+    if (!user1 || !user2 || user1 === user2) {
+      resultDiv.textContent = '別の2人を選んでください。';
+      return;
+    }
+
+    // テーブル生成
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr>
+        <th>曲名</th>
+        <th>${user1}</th>
+        <th>${user2}</th>
+      </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    songs.forEach(song => {
+      const score1Arr = userScores[user1][song] || [];
+      const score2Arr = userScores[user2][song] || [];
+      const latest1 = score1Arr[score1Arr.length - 1] || 0;
+      const latest2 = score2Arr[score2Arr.length - 1] || 0;
+
+      const tr = document.createElement('tr');
+      const tdSong = document.createElement('td');
+      const td1 = document.createElement('td');
+      const td2 = document.createElement('td');
+
+      tdSong.textContent = song;
+      td1.textContent = latest1.toLocaleString();
+      td2.textContent = latest2.toLocaleString();
+
+      // 勝っている方に色をつける
+      if (latest1 > latest2) td1.classList.add('winner');
+      else if (latest2 > latest1) td2.classList.add('winner');
+
+      tr.appendChild(tdSong);
+      tr.appendChild(td1);
+      tr.appendChild(td2);
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    resultDiv.appendChild(table);
+  });
+
+  main();
+</script>
+</body>
+</html>
